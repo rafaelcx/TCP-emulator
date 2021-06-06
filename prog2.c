@@ -44,7 +44,7 @@ void tolayer5(int AorB, char datasent[20]);
 
 int a_state;           // Defines the state of the sender entity(A): 0 waiting for messages / 1 waiting for Acks
 int a_rtt;             // Defines the timeout value for entity(A) packets
-int a_seq;			   // Defines entity(A) packets sequence number, used for assure packets are in order	
+int a_seq;             // Defines entity(A) packets sequence number, used for assure packets are in order	
 
 struct pkt a_last_pkt; // Defines the last packet sent by entity(A)
 
@@ -66,10 +66,10 @@ int get_checksum(struct pkt *packet) {
 
 /********* STUDENTS WRITE THE NEXT SEVEN ROUTINES *********/
 
-/* called from layer 5, passed the data to be sent to other side */
+/* Called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) {
 
-	// If it still has not received an Ack, will not forward any message
+    // If it still has not received an Ack, will not forward any message
     if (a_state != 0) {
         printf("\tSending Side: Still not ack. Message: %s\n", message.data);
         return;
@@ -91,15 +91,15 @@ void A_output(struct msg message) {
     starttimer(0, a_rtt);
 }
 
-/* need be completed only for extra credit */
+/* Need be completed only for extra credit */
 void B_output(struct msg message) {
 
 }
 
-/* called from layer 3, when a packet arrives for layer 5 */
+/* Called from layer 3, when a packet arrives for layer 5 */
 void A_input(struct pkt packet) {
 
-	// Unidirectional data transfer only
+    // Unidirectional data transfer only
     if (a_state != 1) {
         printf("\tSending Side: Error -From A to B only.\n");
         return;
@@ -126,10 +126,10 @@ void A_input(struct pkt packet) {
     a_state = 0;
 }
 
-/* called when A's timer goes off */
+/* Called when A's timer goes off */
 void A_timerinterrupt(void) {
 
-	// Verifica se o sender esta esperando reconhecimento
+	// Check if sender is waiting for an Ack
     if (a_state != 1) {
         printf("\tReceiving Side (timeinterrupt): Was not waiting for an Ack\n");
         return;
@@ -140,7 +140,7 @@ void A_timerinterrupt(void) {
     starttimer(0, a_rtt);
 }
 
-/* the following routine will be called once (only) before any other */
+/* The following routine will be called once (only) before any other */
 /* entity A routines are called. You can use it to do any initialization */
 void A_init(void) {
     a_state = 0;
@@ -157,7 +157,7 @@ void send_ack(int AorB, int ack) {
 
 /* Note that with simplex transfer from a-to-B, there is no B_output() */
 
-/* called from layer 3, when a packet arrives for layer 4 at B*/
+/* Called from layer 3, when a packet arrives for layer 4 at B*/
 void B_input(struct pkt packet) {
     
     // Sends a Nack because the packet is corrupted
@@ -183,7 +183,7 @@ void B_input(struct pkt packet) {
     b_seq = 1 - b_seq;
 }
 
-/* called when B's timer goes off */
+/* Called when B's timer goes off */
 void B_timerinterrupt(void) {
     
 }
@@ -257,63 +257,96 @@ int main(int argc, char **argv) {
 
     while (1) {
         eventptr = evlist; /* get next event to simulate */
-        if (eventptr == NULL)
+        
+        if (eventptr == NULL) {
             goto terminate;
+        }
+
         evlist = evlist->next; /* remove this event from event list */
-        if (evlist != NULL)
+        
+        if (evlist != NULL) {
             evlist->prev = NULL;
+        }
+
         if (TRACE >= 2) {
             printf("\nEVENT time: %f,", eventptr->evtime);
             printf("  type: %d", eventptr->evtype);
-            if (eventptr->evtype == 0)
+            
+            if (eventptr->evtype == 0) {
                 printf(", timerinterrupt  ");
-            else if (eventptr->evtype == 1)
+            }
+
+            else if (eventptr->evtype == 1) {
                 printf(", fromlayer5 ");
-            else
+            }
+
+            else {
                 printf(", fromlayer3 ");
+            }
+
             printf(" entity: %d\n", eventptr->eventity);
         }
+
         time = eventptr->evtime; /* update time to next event time */
         if (eventptr->evtype == FROM_LAYER5) {
+           
             if (nsim < nsimmax) {
-                if (nsim + 1 < nsimmax)
+                
+                if (nsim + 1 < nsimmax) {
                     generate_next_arrival(); /* set up future arrival */
+                }
+
                 /* fill in msg to give with string of same letter */
                 j = nsim % 26;
-                for (i = 0; i < 20; i++)
+                for (i = 0; i < 20; i++) {
                     msg2give.data[i] = 97 + j;
+                }
+
                 msg2give.data[19] = 0;
+                
                 if (TRACE > 2) {
                     printf("          MAINLOOP: data given to student: ");
-                    for (i = 0; i < 20; i++)
+                    for (i = 0; i < 20; i++) {
                         printf("%c", msg2give.data[i]);
+                    }
                     printf("\n");
                 }
+
                 nsim++;
-                if (eventptr->eventity == A)
+                if (eventptr->eventity == A) {
                     A_output(msg2give);
-                else
+                } else {
                     B_output(msg2give);
+                }
             }
         } else if (eventptr->evtype == FROM_LAYER3) {
             pkt2give.seqnum = eventptr->pktptr->seqnum;
             pkt2give.acknum = eventptr->pktptr->acknum;
             pkt2give.checksum = eventptr->pktptr->checksum;
-            for (i = 0; i < 20; i++)
+            
+            for (i = 0; i < 20; i++) {
                 pkt2give.payload[i] = eventptr->pktptr->payload[i];
-            if (eventptr->eventity == A) /* deliver packet by calling */
+            }
+
+            if (eventptr->eventity == A) { /* deliver packet by calling */
                 A_input(pkt2give); /* appropriate entity */
-            else
+            } else {
                 B_input(pkt2give);
+            }
+
             free(eventptr->pktptr); /* free the memory for packet */
         } else if (eventptr->evtype == TIMER_INTERRUPT) {
-            if (eventptr->eventity == A)
+            
+            if (eventptr->eventity == A) {
                 A_timerinterrupt();
-            else
+            } else {
                 B_timerinterrupt();
+            }
+
         } else {
             printf("INTERNAL PANIC: unknown event type \n");
         }
+        
         free(eventptr);
     }
 
